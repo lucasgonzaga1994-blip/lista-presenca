@@ -1,0 +1,11 @@
+{
+  "name": "Presença Igreja",
+  "short_name": "Presença",
+  "description": "Controle de presença por QR Code",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f4f7f5",
+  "theme_color": "#0f6b4f",
+  "lang": "pt-BR",
+  "icons": []
+}

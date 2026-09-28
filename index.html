@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0f6b4f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/style.css">
+  <title>Presença Igreja</title>
+</head>
+<body>
+  <div class="ipda-rainbow"></div>
+  <header class="topbar">
+    <div>
+      <div class="brand">PRESENÇA IGREJA</div>
+      <div class="subtitle">Igreja Pentecostal Deus é Amor · Controle de presença por QR Code</div>
+    </div>
+    <button id="installBtn" class="ghost hidden">Instalar</button>
+  </header>
+
+  <main class="container">
+    <section id="dashboard" class="page active">
+      <div class="hero">
+        <div>
+          <span class="eyebrow">SISTEMA DE PRESENÇA</span>
+          <h1>Controle seus cultos de forma rápida.</h1>
+          <p>Cadastre membros, crie o culto e registre a presença lendo o QR Code.</p>
+        </div>
+        <button class="primary" onclick="showPage('scanner')">📷 Abrir leitor</button>
+      </div>
+
+      <div class="cards">
+        <div class="card stat"><span>Membros</span><strong id="statMembers">0</strong></div>
+        <div class="card stat"><span>Cultos</span><strong id="statCultos">0</strong></div>
+        <div class="card stat"><span>Presenças no culto</span><strong id="statPresentes">0</strong></div>
+        <div class="card stat"><span>Faltas no culto</span><strong id="statFaltas">0</strong></div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">
+          <div><h2>Culto ativo</h2><p>O leitor registra presença neste culto.</p></div>
+          <button class="secondary" onclick="showPage('cultos')">Gerenciar cultos</button>
+        </div>
+        <div id="activeCultoBox"></div>
+      </div>
+
+      <div class="card notice">
+        <strong>Modo inicial:</strong> esta versão salva os dados neste navegador. Ela já funciona para testes e uso em um aparelho. Depois podemos conectar o Firebase para sincronizar os dados entre vários celulares/computadores.
+      </div>
+    </section>
+
+    <section id="members" class="page">
+      <div class="page-head">
+        <div><h1>Membros</h1><p>Cadastre os membros e associe o conteúdo do QR Code.</p></div>
+        <div class="actions">
+          <label class="secondary file-btn">Importar CSV<input id="csvInput" type="file" accept=".csv,text/csv"></label>
+          <button class="primary" onclick="openMemberModal()">+ Novo membro</button>
+        </div>
+      </div>
+      <div class="card">
+        <input id="memberSearch" class="search" placeholder="Pesquisar por nome ou QR Code..." oninput="renderMembers()">
+        <div class="table-wrap"><table><thead><tr><th>Nome</th><th>QR / código</th><th>Status</th><th></th></tr></thead><tbody id="membersBody"></tbody></table></div>
+      </div>
+    </section>
+
+    <section id="cultos" class="page">
+      <div class="page-head">
+        <div><h1>Cultos</h1><p>Crie um culto e depois abra o leitor.</p></div>
+        <button class="primary" onclick="openCultoModal()">+ Novo culto</button>
+      </div>
+      <div id="cultosList" class="stack"></div>
+    </section>
+
+    <section id="scanner" class="page">
+      <div class="page-head">
+        <div><h1>Leitor de presença</h1><p id="scannerSubtitle">Selecione um culto ativo para começar.</p></div>
+        <button class="secondary" onclick="showPage('dashboard')">Voltar</button>
+      </div>
+      <div class="scanner-grid">
+        <div class="card">
+          <div id="reader"></div>
+          <div class="scanner-controls">
+            <button id="startScanner" class="primary">📷 Iniciar câmera</button>
+            <button id="stopScanner" class="secondary" disabled>Parar</button>
+          </div>
+          <div class="manual">
+            <label>Teste sem câmera</label>
+            <div class="manual-row">
+              <input id="manualQr" placeholder="Cole aqui o conteúdo do QR Code">
+              <button class="secondary" onclick="registerManual()">Registrar</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="presence-counter"><span>Presenças</span><strong id="scannerCount">0</strong></div>
+          <div id="lastScan" class="last-scan empty">Nenhuma leitura ainda.</div>
+          <h3>Últimas leituras</h3>
+          <div id="scanHistory" class="history"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="reports" class="page">
+      <div class="page-head">
+        <div><h1>Relatório</h1><p>Veja presentes e faltantes do culto selecionado.</p></div>
+        <select id="reportCulto" class="select" onchange="renderReport()"></select>
+      </div>
+      <div class="cards">
+        <div class="card stat"><span>Presentes</span><strong id="reportPresentes">0</strong></div>
+        <div class="card stat"><span>Faltantes</span><strong id="reportFaltantes">0</strong></div>
+        <div class="card stat"><span>Percentual</span><strong id="reportPercentual">0%</strong></div>
+      </div>
+      <div class="report-grid">
+        <div class="card"><h2>Presentes</h2><div id="presentesList"></div></div>
+        <div class="card"><h2>Faltantes</h2><div id="faltantesList"></div></div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <button onclick="showPage('dashboard')" data-page="dashboard">⌂<span>Início</span></button>
+    <button onclick="showPage('members')" data-page="members">♙<span>Membros</span></button>
+    <button onclick="showPage('cultos')" data-page="cultos">▣<span>Cultos</span></button>
+    <button onclick="showPage('scanner')" data-page="scanner">⌁<span>QR</span></button>
+    <button onclick="showPage('reports')" data-page="reports">☷<span>Relatório</span></button>
+  </nav>
+
+  <div id="memberModal" class="modal hidden">
+    <div class="modal-box">
+      <div class="modal-head"><h2 id="memberModalTitle">Novo membro</h2><button onclick="closeModal('memberModal')">×</button></div>
+      <input type="hidden" id="memberId">
+      <label>Nome completo<input id="memberName" placeholder="Ex.: João da Silva"></label>
+      <label>Conteúdo do QR Code<input id="memberQr" placeholder="Ex.: https://igreja.digital/web?..."></label>
+      <div class="modal-actions"><button class="secondary" onclick="closeModal('memberModal')">Cancelar</button><button class="primary" onclick="saveMember()">Salvar</button></div>
+    </div>
+  </div>
+
+  <div id="cultoModal" class="modal hidden">
+    <div class="modal-box">
+      <div class="modal-head"><h2>Novo culto</h2><button onclick="closeModal('cultoModal')">×</button></div>
+      <label>Nome<input id="cultoName" placeholder="Ex.: Culto de Domingo"></label>
+      <div class="two"><label>Data<input id="cultoDate" type="date"></label><label>Horário<input id="cultoTime" type="time"></label></div>
+      <div class="modal-actions"><button class="secondary" onclick="closeModal('cultoModal')">Cancelar</button><button class="primary" onclick="saveCulto()">Criar culto</button></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="https://unpkg.com/html5-qrcode" defer></script>
+  <script src="js/app.js" defer></script>
+</body>
+</html>
