@@ -125,7 +125,92 @@ function openCulto(id){state.cultos.forEach(c=>c.status="finalizado");const c=st
 function closeCulto(id){const c=state.cultos.find(x=>x.id===id);if(c)c.status="finalizado";save();toast("Culto finalizado.");}
 function showReport(id){showPage("reports");setTimeout(()=>{document.getElementById("reportCulto").value=id;renderReport()},0)}
 function closeModal(id){document.getElementById(id).classList.add("hidden")}
+async function ```javascript
 async function startScanner(){
+  const c = activeCulto();
+
+  if(!c){
+    return toast("Crie/abra um culto antes de iniciar.", true);
+  }
+
+  if(scannerRunning){
+    return;
+  }
+
+  if(typeof Html5Qrcode === "undefined"){
+    return toast("Leitor ainda carregando. Aguarde alguns segundos e tente novamente.", true);
+  }
+
+  if(!window.isSecureContext){
+    return toast("A câmera precisa de HTTPS para funcionar.", true);
+  }
+
+  const reader = document.getElementById("reader");
+
+  // Limpa qualquer leitor anterior
+  reader.innerHTML = "";
+
+  scanner = new Html5Qrcode("reader");
+
+  try {
+    const config = {
+      fps: 10,
+      qrbox: function(viewfinderWidth, viewfinderHeight) {
+        const size = Math.floor(
+          Math.min(viewfinderWidth, viewfinderHeight) * 0.70
+        );
+
+        return {
+          width: size,
+          height: size
+        };
+      },
+      aspectRatio: 1.0,
+      formatsToSupport: [
+        Html5QrcodeSupportedFormats.QR_CODE
+      ],
+      rememberLastUsedCamera: true,
+      showTorchButtonIfSupported: true
+    };
+
+    await scanner.start(
+      {
+        facingMode: "environment"
+      },
+      config,
+      function(decodedText) {
+        console.log("QR Code encontrado:", decodedText);
+        handleScan(decodedText);
+      },
+      function(errorMessage) {
+        // É normal aparecerem erros enquanto a câmera procura o QR Code.
+      }
+    );
+
+    scannerRunning = true;
+
+    document.getElementById("startScanner").disabled = true;
+    document.getElementById("stopScanner").disabled = false;
+
+    toast("Câmera pronta. Aponte para o QR Code.");
+
+  } catch(error) {
+
+    console.error("Erro ao iniciar leitor:", error);
+
+    scannerRunning = false;
+
+    document.getElementById("startScanner").disabled = false;
+    document.getElementById("stopScanner").disabled = true;
+
+    toast(
+      "Não foi possível iniciar o leitor. Atualize a página e tente novamente.",
+      true
+    );
+  }
+}
+```
+{
   const c=activeCulto(); if(!c)return toast("Crie/abra um culto antes de iniciar.",true);
   if(scannerRunning)return;
   if(typeof Html5Qrcode==="undefined")return toast("Leitor ainda carregando. Tente novamente.",true);
