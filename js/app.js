@@ -950,27 +950,71 @@ async function startScanner() {
 
       config,
 
-      function(decodedText) {
+     function showScanResult(member, already) {
+  const box = document.getElementById("lastScan");
 
-        console.log(
-          "================================="
-        );
+  if (!box) return;
 
-        console.log(
-          "QR CODE DETECTADO:"
-        );
+  box.className = "last-scan";
 
-        console.log(
-          decodedText
-        );
+  if (already) {
+    box.innerHTML = `
+      <div style="
+        padding:20px;
+        text-align:center;
+        font-size:20px;
+      ">
+        ⚠️<br>
+        <strong>${esc(member.name)}</strong><br>
+        <span>Presença já registrada neste culto.</span>
+      </div>
+    `;
+  } else {
+    box.innerHTML = `
+      <div style="
+        padding:20px;
+        text-align:center;
+        font-size:22px;
+      ">
+        ✅<br>
+        <strong>PRESENÇA CONFIRMADA!</strong><br>
+        <span>${esc(member.name)}</span><br>
+        <small>
+          ${new Date().toLocaleTimeString("pt-BR")}
+        </small>
+      </div>
+    `;
+  }
 
-        console.log(
-          "================================="
-        );
+  const c = activeCulto();
 
+  const items = state.attendance
+    .filter(a => a.cultoId === c?.id)
+    .slice(-8)
+    .reverse()
+    .map(a => {
+      const m = state.members.find(
+        x => x.id === a.membroId
+      );
 
-        handleScan(decodedText);
-      },
+      return `
+        <div class="history-item">
+          <strong>✓ ${esc(m?.name || "Membro")}</strong>
+          ${new Date(a.timestamp).toLocaleTimeString("pt-BR")}
+        </div>
+      `;
+    })
+    .join("");
+
+  document.getElementById("scanHistory").innerHTML = items;
+
+  document.getElementById("scannerCount").textContent =
+    c
+      ? state.attendance.filter(
+          a => a.cultoId === c.id
+        ).length
+      : 0;
+}
 
       function(errorMessage) {
 
