@@ -1,3 +1,4 @@
+```javascript
 const STORAGE = "presenca_igreja_v1";
 
 const SAMPLE_QR =
@@ -10,7 +11,7 @@ let deferredPrompt = null;
 
 
 /* =========================================================
-   ESTADO / LOCALSTORAGE
+   ESTADO
 ========================================================= */
 
 function loadState() {
@@ -30,7 +31,7 @@ function loadState() {
   return {
     members: [
       {
-        id: crypto.randomUUID(),
+        id: uid(),
         name: "Membro exemplo",
         qr: SAMPLE_QR,
         active: true
@@ -39,7 +40,7 @@ function loadState() {
 
     cultos: [
       {
-        id: crypto.randomUUID(),
+        id: uid(),
         name: "Culto de teste",
         date: date,
         time: "19:00",
@@ -53,21 +54,32 @@ function loadState() {
 
 
 function save() {
-  localStorage.setItem(STORAGE, JSON.stringify(state));
+  localStorage.setItem(
+    STORAGE,
+    JSON.stringify(state)
+  );
+
   renderAll();
 }
 
 
 function uid() {
-  return crypto.randomUUID
-    ? crypto.randomUUID()
-    : Date.now().toString(36) +
-      Math.random().toString(36).slice(2);
+  if (
+    typeof crypto !== "undefined" &&
+    crypto.randomUUID
+  ) {
+    return crypto.randomUUID();
+  }
+
+  return (
+    Date.now().toString(36) +
+    Math.random().toString(36).slice(2)
+  );
 }
 
 
-function esc(s) {
-  return String(s ?? "").replace(
+function esc(value) {
+  return String(value ?? "").replace(
     /[&<>"']/g,
     m => ({
       "&": "&amp;",
@@ -87,9 +99,12 @@ function esc(s) {
 function showPage(id) {
   document
     .querySelectorAll(".page")
-    .forEach(p => p.classList.remove("active"));
+    .forEach(page =>
+      page.classList.remove("active")
+    );
 
-  const page = document.getElementById(id);
+  const page =
+    document.getElementById(id);
 
   if (page) {
     page.classList.add("active");
@@ -104,7 +119,10 @@ function showPage(id) {
       );
     });
 
-  if (id !== "scanner" && scannerRunning) {
+  if (
+    id !== "scanner" &&
+    scannerRunning
+  ) {
     stopScanner();
   }
 
@@ -118,21 +136,26 @@ function showPage(id) {
 
 
 /* =========================================================
-   MENSAGENS
+   TOAST
 ========================================================= */
 
-function toast(msg, error = false) {
-  const el = document.getElementById("toast");
+function toast(
+  message,
+  error = false
+) {
+  const element =
+    document.getElementById("toast");
 
-  if (!el) return;
+  if (!element) return;
 
-  el.textContent = msg;
+  element.textContent = message;
 
-  el.className =
-    "toast show" + (error ? " error" : "");
+  element.className =
+    "toast show" +
+    (error ? " error" : "");
 
   setTimeout(() => {
-    el.className = "toast";
+    element.className = "toast";
   }, 3000);
 }
 
@@ -143,56 +166,75 @@ function toast(msg, error = false) {
 
 function activeCulto() {
   return state.cultos.find(
-    c => c.status === "aberto"
+    culto =>
+      culto.status === "aberto"
   );
 }
 
 
 /* =========================================================
-   RENDERIZAÇÃO GERAL
+   RENDER GERAL
 ========================================================= */
 
 function renderAll() {
   const activeMembers =
-    state.members.filter(m => m.active);
+    state.members.filter(
+      member => member.active
+    );
 
-  const membersElement =
-    document.getElementById("statMembers");
+  const membersCounter =
+    document.getElementById(
+      "statMembers"
+    );
 
-  if (membersElement) {
-    membersElement.textContent =
+  if (membersCounter) {
+    membersCounter.textContent =
       activeMembers.length;
   }
 
-  const cultosElement =
-    document.getElementById("statCultos");
 
-  if (cultosElement) {
-    cultosElement.textContent =
+  const cultosCounter =
+    document.getElementById(
+      "statCultos"
+    );
+
+  if (cultosCounter) {
+    cultosCounter.textContent =
       state.cultos.length;
   }
 
-  const c = activeCulto();
+
+  const culto =
+    activeCulto();
+
 
   const present =
-    c
+    culto
       ? state.attendance.filter(
-          a => a.cultoId === c.id
+          attendance =>
+            attendance.cultoId === culto.id
         ).length
       : 0;
 
-  const presentesElement =
-    document.getElementById("statPresentes");
 
-  if (presentesElement) {
-    presentesElement.textContent = present;
+  const presentCounter =
+    document.getElementById(
+      "statPresentes"
+    );
+
+  if (presentCounter) {
+    presentCounter.textContent =
+      present;
   }
 
-  const faltasElement =
-    document.getElementById("statFaltas");
 
-  if (faltasElement) {
-    faltasElement.textContent =
+  const absentCounter =
+    document.getElementById(
+      "statFaltas"
+    );
+
+  if (absentCounter) {
+    absentCounter.textContent =
       Math.max(
         0,
         activeMembers.length - present
@@ -201,33 +243,43 @@ function renderAll() {
 
 
   const activeCultoBox =
-    document.getElementById("activeCultoBox");
+    document.getElementById(
+      "activeCultoBox"
+    );
+
 
   if (activeCultoBox) {
-    activeCultoBox.innerHTML = c
-      ? `
-        <div class="culto active">
-          <div>
-            <h3>${esc(c.name)}</h3>
-            <small>
-              ${formatDate(c.date)} às ${esc(c.time)}
-            </small>
-          </div>
+    activeCultoBox.innerHTML =
+      culto
+        ? `
+          <div class="culto active">
 
-          <button
-            class="primary"
-            onclick="showPage('scanner')"
-          >
-            Abrir leitor
-          </button>
-        </div>
-      `
-      : `
-        <div class="notice">
-          Nenhum culto aberto.
-          Crie um culto e abra-o para iniciar a chamada.
-        </div>
-      `;
+            <div>
+              <h3>
+                ${esc(culto.name)}
+              </h3>
+
+              <small>
+                ${formatDate(culto.date)}
+                às ${esc(culto.time)}
+              </small>
+            </div>
+
+            <button
+              class="primary"
+              onclick="showPage('scanner')"
+            >
+              Abrir leitor
+            </button>
+
+          </div>
+        `
+        : `
+          <div class="notice">
+            Nenhum culto aberto.
+            Crie um culto e abra-o para iniciar a chamada.
+          </div>
+        `;
   }
 
 
@@ -237,25 +289,37 @@ function renderAll() {
   renderReport();
 
 
-  const subtitle =
-    document.getElementById("scannerSubtitle");
+  const scannerSubtitle =
+    document.getElementById(
+      "scannerSubtitle"
+    );
 
-  if (subtitle) {
-    subtitle.textContent = c
-      ? `${c.name} — ${formatDate(c.date)} às ${c.time}`
-      : "Selecione um culto ativo para começar.";
+
+  if (scannerSubtitle) {
+    scannerSubtitle.textContent =
+      culto
+        ? `${culto.name} — ${formatDate(
+            culto.date
+          )} às ${culto.time}`
+        : "Selecione um culto ativo para começar.";
   }
 
 
   const scannerCount =
-    document.getElementById("scannerCount");
+    document.getElementById(
+      "scannerCount"
+    );
+
 
   if (scannerCount) {
-    scannerCount.textContent = c
-      ? state.attendance.filter(
-          a => a.cultoId === c.id
-        ).length
-      : 0;
+    scannerCount.textContent =
+      culto
+        ? state.attendance.filter(
+            attendance =>
+              attendance.cultoId ===
+              culto.id
+          ).length
+        : 0;
   }
 }
 
@@ -264,11 +328,14 @@ function renderAll() {
    DATA
 ========================================================= */
 
-function formatDate(d) {
-  return d
-    ? new Date(d + "T00:00:00")
-        .toLocaleDateString("pt-BR")
-    : "";
+function formatDate(date) {
+  if (!date) return "";
+
+  return new Date(
+    date + "T00:00:00"
+  ).toLocaleDateString(
+    "pt-BR"
+  );
 }
 
 
@@ -278,95 +345,135 @@ function formatDate(d) {
 
 function renderMembers() {
   const search =
-    document.getElementById("memberSearch");
-
-  const q =
-    (search?.value || "").toLowerCase();
-
-  const rows =
-    state.members.filter(m =>
-      `${m.name} ${m.qr}`
-        .toLowerCase()
-        .includes(q)
+    document.getElementById(
+      "memberSearch"
     );
 
+  const query =
+    (
+      search?.value || ""
+    ).toLowerCase();
+
+
+  const members =
+    state.members.filter(
+      member =>
+        `${member.name} ${member.qr}`
+          .toLowerCase()
+          .includes(query)
+    );
+
+
   const body =
-    document.getElementById("membersBody");
+    document.getElementById(
+      "membersBody"
+    );
+
 
   if (!body) return;
 
-  body.innerHTML = rows.length
-    ? rows
-        .map(
-          m => `
+
+  body.innerHTML =
+    members.length
+      ? members
+          .map(
+            member => `
+              <tr>
+
+                <td>
+                  <strong>
+                    ${esc(member.name)}
+                  </strong>
+                </td>
+
+                <td title="${esc(member.qr)}">
+                  ${esc(
+                    member.qr.length > 48
+                      ? member.qr.slice(0, 48) +
+                        "…"
+                      : member.qr
+                  )}
+                </td>
+
+                <td>
+                  <span
+                    class="pill ${
+                      member.active
+                        ? ""
+                        : "off"
+                    }"
+                  >
+                    ${
+                      member.active
+                        ? "Ativo"
+                        : "Inativo"
+                    }
+                  </span>
+                </td>
+
+                <td>
+                  <button
+                    class="secondary"
+                    onclick="editMember('${member.id}')"
+                  >
+                    Editar
+                  </button>
+                </td>
+
+              </tr>
+            `
+          )
+          .join("")
+      : `
           <tr>
-
-            <td>
-              <strong>
-                ${esc(m.name)}
-              </strong>
+            <td colspan="4">
+              Nenhum membro encontrado.
             </td>
-
-            <td title="${esc(m.qr)}">
-              ${esc(
-                m.qr.length > 48
-                  ? m.qr.slice(0, 48) + "…"
-                  : m.qr
-              )}
-            </td>
-
-            <td>
-              <span
-                class="pill ${m.active ? "" : "off"}"
-              >
-                ${m.active ? "Ativo" : "Inativo"}
-              </span>
-            </td>
-
-            <td>
-              <button
-                class="secondary"
-                onclick="editMember('${m.id}')"
-              >
-                Editar
-              </button>
-            </td>
-
           </tr>
-        `
-        )
-        .join("")
-    : `
-      <tr>
-        <td colspan="4">
-          Nenhum membro encontrado.
-        </td>
-      </tr>
-    `;
+        `;
 }
 
 
 function openMemberModal(id = null) {
-  document.getElementById("memberModalTitle").textContent =
-    id ? "Editar membro" : "Novo membro";
+  document.getElementById(
+    "memberModalTitle"
+  ).textContent =
+    id
+      ? "Editar membro"
+      : "Novo membro";
 
-  document.getElementById("memberId").value =
+
+  document.getElementById(
+    "memberId"
+  ).value =
     id || "";
+
 
   const member =
     state.members.find(
-      x => x.id === id
+      item => item.id === id
     );
 
-  document.getElementById("memberName").value =
+
+  document.getElementById(
+    "memberName"
+  ).value =
     member?.name || "";
 
-  document.getElementById("memberQr").value =
+
+  document.getElementById(
+    "memberQr"
+  ).value =
     member?.qr || "";
 
+
   document
-    .getElementById("memberModal")
-    .classList.remove("hidden");
+    .getElementById(
+      "memberModal"
+    )
+    .classList.remove(
+      "hidden"
+    );
 }
 
 
@@ -377,19 +484,26 @@ function editMember(id) {
 
 function saveMember() {
   const id =
-    document.getElementById("memberId").value;
+    document.getElementById(
+      "memberId"
+    ).value;
+
 
   const name =
     document
-      .getElementById("memberName")
-      .value
-      .trim();
+      .getElementById(
+        "memberName"
+      )
+      .value.trim();
+
 
   const qr =
     document
-      .getElementById("memberQr")
-      .value
-      .trim();
+      .getElementById(
+        "memberQr"
+      )
+      .value.trim();
+
 
   if (!name || !qr) {
     return toast(
@@ -401,10 +515,12 @@ function saveMember() {
 
   const duplicate =
     state.members.some(
-      m =>
-        m.qr === qr &&
-        m.id !== id
+      member =>
+        String(member.qr).trim() ===
+          qr &&
+        member.id !== id
     );
+
 
   if (duplicate) {
     return toast(
@@ -417,7 +533,7 @@ function saveMember() {
   if (id) {
     const member =
       state.members.find(
-        x => x.id === id
+        item => item.id === id
       );
 
     if (member) {
@@ -438,7 +554,9 @@ function saveMember() {
 
   save();
 
-  toast("Membro salvo.");
+  toast(
+    "Membro salvo."
+  );
 }
 
 
@@ -448,31 +566,38 @@ function saveMember() {
 
 function renderCultos() {
   const list =
-    document.getElementById("cultosList");
+    document.getElementById(
+      "cultosList"
+    );
 
   if (!list) return;
+
 
   list.innerHTML =
     state.cultos
       .slice()
       .sort(
         (a, b) =>
-          (b.date + b.time)
-            .localeCompare(
-              a.date + a.time
-            )
+          (
+            b.date + b.time
+          ).localeCompare(
+            a.date + a.time
+          )
       )
-      .map(c => {
+      .map(culto => {
 
-        const p =
+        const count =
           state.attendance.filter(
-            a => a.cultoId === c.id
+            attendance =>
+              attendance.cultoId ===
+              culto.id
           ).length;
+
 
         return `
           <div
             class="culto ${
-              c.status === "aberto"
+              culto.status === "aberto"
                 ? "active"
                 : ""
             }"
@@ -481,13 +606,18 @@ function renderCultos() {
             <div>
 
               <h3>
-                ${esc(c.name)}
+                ${esc(culto.name)}
               </h3>
 
               <small>
-                ${formatDate(c.date)}
-                às ${esc(c.time)}
-                · ${p} presença(s)
+                ${formatDate(
+                  culto.date
+                )}
+                às ${esc(
+                  culto.time
+                )}
+                · ${count}
+                presença(s)
               </small>
 
             </div>
@@ -495,8 +625,8 @@ function renderCultos() {
             <div class="actions">
 
               ${
-                c.status === "aberto"
-
+                culto.status ===
+                "aberto"
                   ? `
                     <button
                       class="primary"
@@ -507,16 +637,15 @@ function renderCultos() {
 
                     <button
                       class="secondary"
-                      onclick="closeCulto('${c.id}')"
+                      onclick="closeCulto('${culto.id}')"
                     >
                       Finalizar
                     </button>
                   `
-
                   : `
                     <button
                       class="secondary"
-                      onclick="openCulto('${c.id}')"
+                      onclick="openCulto('${culto.id}')"
                     >
                       Abrir
                     </button>
@@ -526,7 +655,7 @@ function renderCultos() {
               <button
                 class="ghost"
                 style="background:#f4f4f4;color:#555"
-                onclick="showReport('${c.id}')"
+                onclick="showReport('${culto.id}')"
               >
                 Relatório
               </button>
@@ -547,34 +676,59 @@ function renderCultos() {
 
 
 function openCultoModal() {
-  const now = new Date();
+  const now =
+    new Date();
 
-  document.getElementById("cultoName").value = "";
 
-  document.getElementById("cultoDate").value =
-    now.toISOString().slice(0, 10);
+  document.getElementById(
+    "cultoName"
+  ).value = "";
 
-  document.getElementById("cultoTime").value =
-    now.toTimeString().slice(0, 5);
+
+  document.getElementById(
+    "cultoDate"
+  ).value =
+    now.toISOString()
+      .slice(0, 10);
+
+
+  document.getElementById(
+    "cultoTime"
+  ).value =
+    now.toTimeString()
+      .slice(0, 5);
+
 
   document
-    .getElementById("cultoModal")
-    .classList.remove("hidden");
+    .getElementById(
+      "cultoModal"
+    )
+    .classList.remove(
+      "hidden"
+    );
 }
 
 
 function saveCulto() {
   const name =
     document
-      .getElementById("cultoName")
-      .value
-      .trim();
+      .getElementById(
+        "cultoName"
+      )
+      .value.trim();
+
 
   const date =
-    document.getElementById("cultoDate").value;
+    document.getElementById(
+      "cultoDate"
+    ).value;
+
 
   const time =
-    document.getElementById("cultoTime").value;
+    document.getElementById(
+      "cultoTime"
+    ).value;
+
 
   if (!name || !date || !time) {
     return toast(
@@ -584,11 +738,14 @@ function saveCulto() {
   }
 
 
-  // Fecha qualquer culto anterior
   state.cultos.forEach(
-    c => {
-      if (c.status === "aberto") {
-        c.status = "finalizado";
+    culto => {
+      if (
+        culto.status ===
+        "aberto"
+      ) {
+        culto.status =
+          "finalizado";
       }
     }
   );
@@ -603,69 +760,95 @@ function saveCulto() {
   });
 
 
-  closeModal("cultoModal");
+  closeModal(
+    "cultoModal"
+  );
 
   save();
 
-  toast("Culto criado e aberto.");
+  toast(
+    "Culto criado e aberto."
+  );
 }
 
 
 function openCulto(id) {
   state.cultos.forEach(
-    c => c.status = "finalizado"
+    culto =>
+      culto.status =
+        "finalizado"
   );
 
-  const c =
+
+  const culto =
     state.cultos.find(
-      x => x.id === id
+      item => item.id === id
     );
 
-  if (c) {
-    c.status = "aberto";
+
+  if (culto) {
+    culto.status = "aberto";
   }
+
 
   save();
 
-  toast("Culto aberto.");
+  toast(
+    "Culto aberto."
+  );
 }
 
 
 function closeCulto(id) {
-  const c =
+  const culto =
     state.cultos.find(
-      x => x.id === id
+      item => item.id === id
     );
 
-  if (c) {
-    c.status = "finalizado";
+
+  if (culto) {
+    culto.status =
+      "finalizado";
   }
+
 
   save();
 
-  toast("Culto finalizado.");
+  toast(
+    "Culto finalizado."
+  );
 }
 
 
 /* =========================================================
-   RELATÓRIO
+   RELATÓRIOS
 ========================================================= */
 
 function renderReportOptions() {
   const select =
-    document.getElementById("reportCulto");
+    document.getElementById(
+      "reportCulto"
+    );
 
   if (!select) return;
+
 
   const current =
     select.value;
 
+
   select.innerHTML =
     state.cultos
       .map(
-        c => `
-          <option value="${c.id}">
-            ${esc(c.name)} — ${formatDate(c.date)}
+        culto => `
+          <option value="${culto.id}">
+            ${esc(
+              culto.name
+            )}
+            —
+            ${formatDate(
+              culto.date
+            )}
           </option>
         `
       )
@@ -675,11 +858,15 @@ function renderReportOptions() {
   if (
     current &&
     state.cultos.some(
-      c => c.id === current
+      culto =>
+        culto.id === current
     )
   ) {
-    select.value = current;
-  } else if (activeCulto()) {
+    select.value =
+      current;
+  } else if (
+    activeCulto()
+  ) {
     select.value =
       activeCulto().id;
   }
@@ -688,45 +875,62 @@ function renderReportOptions() {
 
 function renderReport() {
   const select =
-    document.getElementById("reportCulto");
+    document.getElementById(
+      "reportCulto"
+    );
+
 
   const id =
     select?.value;
 
+
   if (!id) return;
 
-  const c =
+
+  const culto =
     state.cultos.find(
-      x => x.id === id
+      item => item.id === id
     );
 
-  if (!c) return;
+
+  if (!culto) return;
+
 
   const activeMembers =
     state.members.filter(
-      m => m.active
+      member => member.active
     );
 
-  const ids =
+
+  const presentIds =
     new Set(
       state.attendance
         .filter(
-          a => a.cultoId === id
+          attendance =>
+            attendance.cultoId === id
         )
         .map(
-          a => a.membroId
+          attendance =>
+            attendance.membroId
         )
     );
 
 
   const presentes =
     activeMembers.filter(
-      m => ids.has(m.id)
+      member =>
+        presentIds.has(
+          member.id
+        )
     );
+
 
   const faltantes =
     activeMembers.filter(
-      m => !ids.has(m.id)
+      member =>
+        !presentIds.has(
+          member.id
+        )
     );
 
 
@@ -748,8 +952,8 @@ function renderReport() {
     activeMembers.length
       ? Math.round(
           presentes.length /
-          activeMembers.length *
-          100
+            activeMembers.length *
+            100
         ) + "%"
       : "0%";
 
@@ -759,12 +963,13 @@ function renderReport() {
   ).innerHTML =
     presentes
       .map(
-        m =>
-          `
-            <div class="list-item">
-              ✅ ${esc(m.name)}
-            </div>
-          `
+        member => `
+          <div class="list-item">
+            ✅ ${esc(
+              member.name
+            )}
+          </div>
+        `
       )
       .join("")
       ||
@@ -776,12 +981,13 @@ function renderReport() {
   ).innerHTML =
     faltantes
       .map(
-        m =>
-          `
-            <div class="list-item">
-              ❌ ${esc(m.name)}
-            </div>
-          `
+        member => `
+          <div class="list-item">
+            ❌ ${esc(
+              member.name
+            )}
+          </div>
+        `
       )
       .join("")
       ||
@@ -792,27 +998,142 @@ function renderReport() {
 function showReport(id) {
   showPage("reports");
 
+
   setTimeout(() => {
+
     const select =
-      document.getElementById("reportCulto");
+      document.getElementById(
+        "reportCulto"
+      );
+
 
     if (select) {
       select.value = id;
       renderReport();
     }
+
   }, 0);
 }
 
 
 /* =========================================================
-   LEITOR QR CODE
+   MODAIS
+========================================================= */
+
+function closeModal(id) {
+  const modal =
+    document.getElementById(id);
+
+  if (modal) {
+    modal.classList.add(
+      "hidden"
+    );
+  }
+}
+
+
+/* =========================================================
+   MODAL DE PRESENÇA
+========================================================= */
+
+function showPresenceModal(
+  member,
+  already = false
+) {
+  const modal =
+    document.getElementById(
+      "presenceModal"
+    );
+
+
+  const title =
+    document.getElementById(
+      "presenceModalTitle"
+    );
+
+
+  const message =
+    document.getElementById(
+      "presenceModalMessage"
+    );
+
+
+  if (!modal) {
+    console.error(
+      "Modal de presença não encontrado no index.html"
+    );
+
+    return;
+  }
+
+
+  if (already) {
+
+    if (title) {
+      title.textContent =
+        "Presença já registrada!";
+    }
+
+
+    if (message) {
+      message.textContent =
+        `${member.name} já possui presença neste culto.`;
+    }
+
+  } else {
+
+    if (title) {
+      title.textContent =
+        "Presença confirmada!";
+    }
+
+
+    if (message) {
+      message.textContent =
+        `A presença de ${member.name} foi registrada com sucesso.`;
+    }
+  }
+
+
+  modal.classList.remove(
+    "hidden"
+  );
+}
+
+
+function closePresenceModal() {
+  const modal =
+    document.getElementById(
+      "presenceModal"
+    );
+
+
+  if (modal) {
+    modal.classList.add(
+      "hidden"
+    );
+  }
+
+
+  /*
+    Depois do OK, libera
+    novamente a câmera.
+  */
+
+  resumeScanner();
+}
+
+
+/* =========================================================
+   SCANNER
 ========================================================= */
 
 async function startScanner() {
+  const culto =
+    activeCulto();
 
-  const c = activeCulto();
 
-  if (!c) {
+  if (!culto) {
     return toast(
       "Crie/abra um culto antes de iniciar.",
       true
@@ -825,7 +1146,10 @@ async function startScanner() {
   }
 
 
-  if (typeof Html5Qrcode === "undefined") {
+  if (
+    typeof Html5Qrcode ===
+    "undefined"
+  ) {
     return toast(
       "Leitor ainda carregando. Aguarde alguns segundos e tente novamente.",
       true
@@ -833,74 +1157,27 @@ async function startScanner() {
   }
 
 
-  if (!window.isSecureContext) {
-    return toast(
-      "A câmera precisa de HTTPS para funcionar.",
-      true
+  const reader =
+    document.getElementById(
+      "reader"
     );
+
+
+  if (!reader) {
+    return;
   }
 
-
-  const reader =
-    document.getElementById("reader");
 
   reader.innerHTML = "";
 
 
   scanner =
-    new Html5Qrcode("reader");
+    new Html5Qrcode(
+      "reader"
+    );
 
 
   try {
-
-    /*
-      Configuração mais aberta para facilitar
-      a leitura de QR Codes pelo celular.
-    */
-
-    const config = {
-
-      fps: 15,
-
-      qrbox: function(
-        viewfinderWidth,
-        viewfinderHeight
-      ) {
-
-        const size =
-          Math.floor(
-            Math.min(
-              viewfinderWidth,
-              viewfinderHeight
-            ) * 0.80
-          );
-
-        return {
-          width: size,
-          height: size
-        };
-      },
-
-      aspectRatio: 1.0,
-
-      formatsToSupport: [
-        Html5QrcodeSupportedFormats.QR_CODE
-      ],
-
-      rememberLastUsedCamera: true,
-
-      showTorchButtonIfSupported: true,
-
-      experimentalFeatures: {
-        useBarCodeDetectorIfSupported: true
-      }
-    };
-
-
-    /*
-      Primeiro tentamos descobrir
-      as câmeras disponíveis.
-    */
 
     let cameras =
       await Html5Qrcode.getCameras();
@@ -917,31 +1194,64 @@ async function startScanner() {
 
 
     /*
-      Procuramos uma câmera traseira.
+      Tenta encontrar a câmera traseira.
     */
 
     let selectedCamera =
-      cameras.find(camera =>
-        /back|rear|environment|traseira|trás/i
-          .test(camera.label)
+      cameras.find(
+        camera =>
+          /back|rear|environment|traseira|trás/i.test(
+            camera.label
+          )
       );
 
 
-    /*
-      Caso o navegador não informe
-      o nome da câmera, usamos a última.
-    */
-
     if (!selectedCamera) {
       selectedCamera =
-        cameras[cameras.length - 1];
+        cameras[
+          cameras.length - 1
+        ];
     }
 
 
-    console.log(
-      "Câmera selecionada:",
-      selectedCamera
-    );
+    const config = {
+
+      fps: 15,
+
+      qrbox:
+        function(
+          width,
+          height
+        ) {
+
+          const size =
+            Math.floor(
+              Math.min(
+                width,
+                height
+              ) * 0.75
+            );
+
+
+          return {
+            width: size,
+            height: size
+          };
+        },
+
+      aspectRatio: 1.0,
+
+      rememberLastUsedCamera:
+        true,
+
+      showTorchButtonIfSupported:
+        true,
+
+      experimentalFeatures: {
+        useBarCodeDetectorIfSupported:
+          true
+      }
+    };
 
 
     await scanner.start(
@@ -950,747 +1260,27 @@ async function startScanner() {
 
       config,
 
-     function showScanResult(member, already) {
-  const box = document.getElementById("lastScan");
+      function(decodedText) {
 
-  if (!box) return;
+        console.log(
+          "QR CODE DETECTADO:",
+          decodedText
+        );
 
-  box.className = "last-scan";
-
-  if (already) {
-    box.innerHTML = `
-      <div style="
-        padding:20px;
-        text-align:center;
-        font-size:20px;
-      ">
-        ⚠️<br>
-        <strong>${esc(member.name)}</strong><br>
-        <span>Presença já registrada neste culto.</span>
-      </div>
-    `;
-  } else {
-    box.innerHTML = `
-      <div style="
-        padding:20px;
-        text-align:center;
-        font-size:22px;
-      ">
-        ✅<br>
-        <strong>PRESENÇA CONFIRMADA!</strong><br>
-        <span>${esc(member.name)}</span><br>
-        <small>
-          ${new Date().toLocaleTimeString("pt-BR")}
-        </small>
-      </div>
-    `;
-  }
-
-  const c = activeCulto();
-
-  const items = state.attendance
-    .filter(a => a.cultoId === c?.id)
-    .slice(-8)
-    .reverse()
-    .map(a => {
-      const m = state.members.find(
-        x => x.id === a.membroId
-      );
-
-      return `
-        <div class="history-item">
-          <strong>✓ ${esc(m?.name || "Membro")}</strong>
-          ${new Date(a.timestamp).toLocaleTimeString("pt-BR")}
-        </div>
-      `;
-    })
-    .join("");
-
-  document.getElementById("scanHistory").innerHTML = items;
-
-  document.getElementById("scannerCount").textContent =
-    c
-      ? state.attendance.filter(
-          a => a.cultoId === c.id
-        ).length
-      : 0;
-}
-
-      function(errorMessage) {
 
         /*
-          Erros de tentativa de leitura
-          são normais enquanto a câmera
-          procura um QR Code.
-
-          Por isso não mostramos toast
-          para cada tentativa.
+          IMPORTANTE:
+          O scanner é pausado
+          imediatamente.
         */
 
-      }
-    );
+        pauseScanner();
 
 
-    scannerRunning = true;
+        /*
+          Processa o QR.
+        */
 
-
-    document.getElementById(
-      "startScanner"
-    ).disabled = true;
-
-
-    document.getElementById(
-      "stopScanner"
-    ).disabled = false;
-
-
-    toast(
-      "📷 Câmera pronta. Aponte para o QR Code."
-    );
-
-  } catch (error) {
-
-    console.error(
-      "Erro ao iniciar leitor:",
-      error
-    );
-
-
-    scannerRunning = false;
-
-
-    document.getElementById(
-      "startScanner"
-    ).disabled = false;
-
-
-    document.getElementById(
-      "stopScanner"
-    ).disabled = true;
-
-
-    toast(
-      "Não foi possível iniciar o leitor. Verifique a permissão da câmera.",
-      true
-    );
-  }
-}
-
-
-async function stopScanner() {
-
-  if (
-    scanner &&
-    scannerRunning
-  ) {
-
-    try {
-
-      await scanner.stop();
-
-      scanner.clear();
-
-    } catch (e) {
-
-      console.error(
-        "Erro ao parar câmera:",
-        e
-      );
-    }
-  }
-
-
-  scannerRunning = false;
-
-
-  const startButton =
-    document.getElementById(
-      "startScanner"
-    );
-
-  const stopButton =
-    document.getElementById(
-      "stopScanner"
-    );
-
-
-  if (startButton) {
-    startButton.disabled = false;
-  }
-
-  if (stopButton) {
-    stopButton.disabled = true;
-  }
-}
-
-
-/* =========================================================
-   PROCESSAMENTO DO QR CODE
-========================================================= */
-
-function handleScan(decoded) {
-
-  const c = activeCulto();
-
-
-  if (!c) {
-    return toast(
-      "Nenhum culto aberto.",
-      true
-    );
-  }
-
-
-  /*
-    O conteúdo que realmente veio
-    do QR Code.
-  */
-
-  const qrLido =
-    String(decoded)
-      .trim();
-
-
-  console.log(
-    "QR LIDO:",
-    qrLido
-  );
-
-
-  /*
-    Procura o membro cadastrado.
-  */
-
-  const member =
-    state.members.find(
-      m =>
-        m.active &&
-        String(m.qr).trim() === qrLido
-    );
-
-
-  /*
-    QR ainda não cadastrado.
-  */
-
-  if (!member) {
-
-    showUnknown(qrLido);
-
-    return;
-  }
-
-
-  /*
-    Verifica se a pessoa
-    já foi registrada neste culto.
-  */
-
-  const already =
-    state.attendance.some(
-      a =>
-        a.cultoId === c.id &&
-        a.membroId === member.id
-    );
-
-
-  if (already) {
-
-    showScanResult(
-      member,
-      true
-    );
-
-    toast(
-      `⚠️ ${member.name} já está presente.`
-    );
-
-    return;
-  }
-
-
-  /*
-    Registra a presença.
-  */
-
-  state.attendance.push({
-
-    id: uid(),
-
-    cultoId: c.id,
-
-    membroId: member.id,
-
-    timestamp:
-      new Date().toISOString(),
-
-    qr: qrLido
-
-  });
-
-
-  save();
-
-
-  /*
-    Mostra o resultado na tela.
-  */
-
-  showScanResult(
-    member,
-    false
-  );
-
-
-  /*
-    Mostra também o aviso rápido.
-  */
-
-  toast(
-    `✅ Presença registrada: ${member.name}`
-  );
-}
-
-
-/* =========================================================
-   RESULTADO DA LEITURA
-========================================================= */
-
-function showScanResult(
-  member,
-  already
-) {
-
-  const box =
-    document.getElementById(
-      "lastScan"
-    );
-
-
-  if (!box) return;
-
-
-  box.className =
-    "last-scan";
-
-
-  if (already) {
-
-    box.innerHTML = `
-      ⚠️
-      <strong>
-        ${esc(member.name)}
-      </strong>
-      <br>
-      Presença já registrada neste culto.
-    `;
-
-  } else {
-
-    box.innerHTML = `
-      ✅
-      <strong>
-        ${esc(member.name)}
-      </strong>
-      <br>
-      Presença registrada às
-      ${new Date().toLocaleTimeString("pt-BR")}.
-    `;
-  }
-
-
-  const c =
-    activeCulto();
-
-
-  const items =
-    state.attendance
-      .filter(
-        a =>
-          a.cultoId === c?.id
-      )
-      .slice(-8)
-      .reverse()
-      .map(a => {
-
-        const m =
-          state.members.find(
-            x =>
-              x.id === a.membroId
-          );
-
-
-        return `
-          <div class="history-item">
-
-            <strong>
-              ✓
-              ${esc(
-                m?.name || "Membro"
-              )}
-            </strong>
-
-            ${new Date(
-              a.timestamp
-            ).toLocaleTimeString(
-              "pt-BR"
-            )}
-
-          </div>
-        `;
-      })
-      .join("");
-
-
-  document.getElementById(
-    "scanHistory"
-  ).innerHTML =
-    items;
-
-
-  document.getElementById(
-    "scannerCount"
-  ).textContent =
-    c
-      ? state.attendance.filter(
-          a =>
-            a.cultoId === c.id
-        ).length
-      : 0;
-}
-
-
-/* =========================================================
-   QR NÃO CADASTRADO
-========================================================= */
-
-function showUnknown(decoded) {
-
-  /*
-    Mostra exatamente que o QR foi
-    encontrado, mas ainda não está
-    associado a um membro.
-  */
-
-  const name =
-    prompt(
-      "QR Code lido com sucesso!\n\n" +
-      "Este QR ainda não está cadastrado.\n\n" +
-      "Digite o nome do membro:",
-      ""
-    );
-
-
-  /*
-    Usuário cancelou.
-  */
-
-  if (
-    !name ||
-    !name.trim()
-  ) {
-
-    toast(
-      "Cadastro cancelado.",
-      true
-    );
-
-    return;
-  }
-
-
-  /*
-    Verifica novamente se o QR
-    já existe.
-  */
-
-  if (
-    state.members.some(
-      m =>
-        String(m.qr).trim() === decoded
-    )
-  ) {
-
-    toast(
-      "Este QR Code já está cadastrado.",
-      true
-    );
-
-    return;
-  }
-
-
-  /*
-    Cria o membro.
-  */
-
-  const member = {
-
-    id: uid(),
-
-    name: name.trim(),
-
-    qr: decoded,
-
-    active: true
-  };
-
-
-  state.members.push(
-    member
-  );
-
-
-  save();
-
-
-  /*
-    IMPORTANTE:
-    Depois de cadastrar, registra
-    a presença automaticamente.
-  */
-
-  handleScan(decoded);
-}
-
-
-/* =========================================================
-   CADASTRO MANUAL
-========================================================= */
-
-function registerManual() {
-
-  const input =
-    document.getElementById(
-      "manualQr"
-    );
-
-
-  const value =
-    input.value.trim();
-
-
-  if (!value) {
-
-    return toast(
-      "Cole o conteúdo do QR Code.",
-      true
-    );
-  }
-
-
-  handleScan(value);
-
-
-  input.value = "";
-}
-
-
-/* =========================================================
-   MODAIS
-========================================================= */
-
-function closeModal(id) {
-
-  const modal =
-    document.getElementById(id);
-
-
-  if (modal) {
-    modal.classList.add("hidden");
-  }
-}
-
-
-/* =========================================================
-   IMPORTAÇÃO CSV
-========================================================= */
-
-document
-  .getElementById("csvInput")
-  ?.addEventListener(
-    "change",
-    e => {
-
-      const file =
-        e.target.files[0];
-
-
-      if (!file) return;
-
-
-      const reader =
-        new FileReader();
-
-
-      reader.onload = () => {
-
-        const lines =
-          reader.result
-            .split(/\r?\n/)
-            .filter(Boolean);
-
-
-        let added = 0;
-
-
-        lines
-          .slice(1)
-          .forEach(line => {
-
-            const parts =
-              line.split(",");
-
-
-            const name =
-              (parts[0] || "")
-                .trim();
-
-
-            const qr =
-              (
-                parts
-                  .slice(1)
-                  .join(",") ||
-                ""
-              ).trim();
-
-
-            if (
-              name &&
-              qr &&
-              !state.members.some(
-                m => m.qr === qr
-              )
-            ) {
-
-              state.members.push({
-
-                id: uid(),
-
-                name: name,
-
-                qr: qr,
-
-                active: true
-
-              });
-
-
-              added++;
-            }
-          });
-
-
-        save();
-
-
-        toast(
-          `${added} membro(s) importado(s).`
-        );
-      };
-
-
-      reader.readAsText(file);
-    }
-  );
-
-
-/* =========================================================
-   PWA - INSTALAÇÃO
-========================================================= */
-
-window.addEventListener(
-  "beforeinstallprompt",
-  e => {
-
-    e.preventDefault();
-
-    deferredPrompt = e;
-
-
-    const installBtn =
-      document.getElementById(
-        "installBtn"
-      );
-
-
-    if (installBtn) {
-      installBtn.classList.remove(
-        "hidden"
-      );
-    }
-  }
-);
-
-
-document
-  .getElementById("installBtn")
-  ?.addEventListener(
-    "click",
-    async () => {
-
-      if (!deferredPrompt) return;
-
-
-      deferredPrompt.prompt();
-
-
-      deferredPrompt = null;
-    }
-  );
-
-
-/* =========================================================
-   SERVICE WORKER
-========================================================= */
-
-if (
-  "serviceWorker" in navigator
-) {
-
-  window.addEventListener(
-    "load",
-    () => {
-
-      navigator.serviceWorker
-        .register(
-          "service-worker.js"
-        )
-        .catch(
-          error =>
-            console.error(
-              "Erro no Service Worker:",
-              error
-            )
-        );
-    }
-  );
-}
-
-
-/* =========================================================
-   BOTÕES
-========================================================= */
-
-document
-  .getElementById("startScanner")
-  ?.addEventListener(
-    "click",
-    startScanner
-  );
-
-
-document
-  .getElementById("stopScanner")
-  ?.addEventListener(
-    "click",
-    stopScanner
-  );
-
-
-/* =========================================================
-   INICIALIZAÇÃO
-========================================================= */
-
-renderAll();
+        handleScan(
+          dec
+```

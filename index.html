@@ -145,7 +145,25 @@
       <div class="modal-actions"><button class="secondary" onclick="closeModal('cultoModal')">Cancelar</button><button class="primary" onclick="saveCulto()">Criar culto</button></div>
     </div>
   </div>
+<div id="presenceModal" class="modal hidden">
+  <div class="modal-box presence-confirmation">
+    <div class="confirmation-icon">✓</div>
 
+    <h2 id="presenceModalTitle">Presença confirmada!</h2>
+
+    <p id="presenceModalMessage">
+      Presença registrada com sucesso.
+    </p>
+
+    <button
+      id="presenceOkBtn"
+      class="primary"
+      type="button"
+    >
+      OK
+    </button>
+  </div>
+</div>
   <div id="toast" class="toast"></div>
 
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
